@@ -29,7 +29,7 @@
         src: "{{ workspace_playbook_loc }}"
         dest: "{{ ansible_playbook_path }}/"
         mode: '0755'
-        
+
     - name: 運行ACS的container
       community.docker.docker_container:
         name: ACS
@@ -41,8 +41,8 @@
         tty: yes
         ports: "{{ port_list }}"
         volumes:
-          - "{{ ansible_playbook_path }}":/ansible_playbook
-          - "{{ du_info_path }}":/info
-          - "{{ tmp_du_info_path }}":/tmp
-          - "{{ cpe_ssh_keys_path }}":/cpe_ssh_keys
-          - "{{ ansible_host_path }}":/etc/ansible
+          - "{{ ansible_playbook_path }}:/ansible_playbook"
+          - "{{ du_info_path }}:/info"
+          - "{{ tmp_du_info_path }}:/tmp"
+          - "{{ cpe_ssh_keys_path }}:/cpe_ssh_keys"
+          - "{{ ansible_host_path }}:/etc/ansible"
