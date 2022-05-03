@@ -1,7 +1,6 @@
 ---
 - name: 運行ACS
   hosts: "{{ ACS_hostname }}"
-  become: true
   tasks:
     - name: 新增所需資料夾與檔案
       ansible.builtin.file:
