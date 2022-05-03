@@ -24,7 +24,7 @@
         - "{{ ansible_host_path }}/ansible.cfg"
 
     - name: 複製playbook
-      ansible.builtin.file:
+      ansible.builtin.copy:
         src: "{{ workspace_playbook_loc }}"
         dest: "{{ ansible_playbook_path }}/"
         mode: '0755'
