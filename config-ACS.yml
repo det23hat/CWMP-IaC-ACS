@@ -32,7 +32,7 @@
     - name: 運行ACS的container
       community.docker.docker_container:
         name: ACS
-        image: inform-manage-server:latest
+        image: 192.168.33.10:5000/inform-manage-server:latest
         detach: yes
         auto_remove: no
         interactive: yes
