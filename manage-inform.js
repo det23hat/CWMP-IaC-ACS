@@ -411,9 +411,9 @@ function deployNewDU(host){
     containerInfoFilePath = `@../info/${containerInfoFileName}.json`;
     var deployNewContainer = child_process.spawn('ansible-playbook',['check-and-deploy-du.yml','--extra-vars',`${containerInfoFilePath}`,'-e',`host=${host}`],{ cwd:'../ansible_playbook'});
     
-    // deployNewContainer.stdout.on('data', function (data) {
-    //   console.log(' ' + data);
-    // });
+    deployNewContainer.stdout.on('data', function (data) {
+       console.log(' ' + data);
+     });
 
     deployNewContainer.stderr.on('data', function (data) {
       console.log('e: ' + data);
