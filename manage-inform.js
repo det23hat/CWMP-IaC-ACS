@@ -366,7 +366,7 @@ function addCpe(key_path,macAddr,ip){
   
               if(code == 0){
                 console.log(`CPE-${macAddr} 註冊成功`);
-                let config_result = cpeInitialConfig(configCpeExtraVar);
+                let config_result = await cpeInitialConfig(configCpeExtraVar);
                 if (config_result == 0){
                   resolve(0);
                 }else{
