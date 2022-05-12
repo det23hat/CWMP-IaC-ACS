@@ -61,7 +61,16 @@ const server = http.createServer(async(req, res) => {
     else if(urlObj.pathname == '/inform/2'){
         req.on('data',async (chunk) => {
         reqBody = JSON.parse(chunk);
-        let host = reqBody.hostname;
+        let parameterList = reqBody.parameter;
+        let host;
+
+        for(param of parameterList){
+          if(param.parameter_name === 'host'){
+            host = param.parameter_value;
+            break;
+          }
+        }
+
         cpeExtraVars=JSON.stringify({
           host: host,
           is_du_update: 1
@@ -76,8 +85,7 @@ const server = http.createServer(async(req, res) => {
           let mac = reqBody.host_mac_addr;
           let host = reqBody.ansible_ssh_host;
 
-          //let status = await registerCpe(mac,host)
-          let status = 0;
+          let status = await registerCpe(mac,host)
           let config_result;
 
           console.log(`status = ${status}`)
