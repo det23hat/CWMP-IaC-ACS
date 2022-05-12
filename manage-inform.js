@@ -72,20 +72,30 @@ const server = http.createServer(async(req, res) => {
         });
     }else if (urlObj.pathname == '/inform/1'){
         req.on('data',async (chunk) => {
-        reqBody = JSON.parse(chunk);
-        let mac = reqBody.host_mac_addr;
-        let host = reqBody.ansible_ssh_host;
+          reqBody = JSON.parse(chunk);
+          let mac = reqBody.host_mac_addr;
+          let host = reqBody.ansible_ssh_host;
 
-        let status = await registerCpe(mac,host)
+          //let status = await registerCpe(mac,host)
+          let status = 0;
+          let config_result;
 
-        console.log(`status = ${status}`)
-        if (status == 0){
-          console.log(`CPE ${mac} 註冊完成`);
-          res.end();
-        }else{
-          console.log(`CPE ${mac} 註冊失敗`);
-          res.end();
-        }
+          console.log(`status = ${status}`)
+          if (status == 0){
+            console.log(`CPE ${mac} 註冊完成`);
+            config_result = {
+              config_complete: 1
+            }
+            res.write(config_result);
+            res.end();
+          }else{
+            console.log(`CPE ${mac} 註冊失敗`);
+            config_result = {
+              config_complete: 0
+            }
+            res.write(config_result);
+            res.end();
+          }
       })
     }else if(urlObj.pathname == '/fortest/DU'){
       req.on('data',async (chunk) => {
