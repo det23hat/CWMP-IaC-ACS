@@ -83,16 +83,16 @@ const server = http.createServer(async(req, res) => {
           console.log(`status = ${status}`)
           if (status == 0){
             console.log(`CPE ${mac} 註冊完成`);
-            config_result = {
+            config_result = JSON.stringify({
               config_complete: 1
-            }
+            })
             res.write(config_result);
             res.end();
           }else{
             console.log(`CPE ${mac} 註冊失敗`);
-            config_result = {
+            config_result = JSON.stringify({
               config_complete: 0
-            }
+            })
             res.write(config_result);
             res.end();
           }
