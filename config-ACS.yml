@@ -39,7 +39,7 @@
       community.docker.docker_container:
         name: ACS
         image: 192.168.33.10:5000/inform-manage-server:latest
-        detach: yes
+        detach: no
         auto_remove: no
         interactive: yes
         privileged: no
