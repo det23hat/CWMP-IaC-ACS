@@ -23,9 +23,15 @@
         - "{{ ansible_host_path }}/hosts"
         - "{{ ansible_host_path }}/ansible.cfg"
 
-    - name: 複製playbook
+    - name: 複製CPE playbook
       ansible.builtin.copy:
-        src: "{{ workspace_playbook_loc }}"
+        src: "{{ workspace_CPE_playbook_loc }}"
+        dest: "{{ ansible_playbook_path }}/"
+        mode: '0755'
+
+    - name: 複製ACS playbook
+      ansible.builtin.copy:
+        src: "{{ workspace_ACS_playbook_loc }}"
         dest: "{{ ansible_playbook_path }}/"
         mode: '0755'
 
@@ -41,7 +47,7 @@
         ports: "{{ port_list }}"
         volumes:
           - "{{ ansible_playbook_path }}:/ansible_playbook"
-          - "{{ du_info_path }}:/info"
-          - "{{ tmp_du_info_path }}:/tmp"
+          - "{{ du_info_path }}:/allDUinfo"
+          - "{{ tmp_du_info_path }}:/newDUInfo"
           - "{{ cpe_ssh_keys_path }}:/cpe_ssh_keys"
           - "{{ ansible_host_path }}:/etc/ansible"

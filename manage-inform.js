@@ -5,14 +5,12 @@ const keygen = require('ssh-keygen');
 const child_process = require('child_process');
 const readline = require('readline');
 const port = 5001;
-//var containerInfoFilePath = '@../info/newVerImageList.json'
 var containerInfoFileName = 'fortest';
-//const containerInfoTempFilePath = `../tmp/${containerInfoFileName}.json`;
-var containerInfoFilePath = `@../info/${containerInfoFileName}.json`;
+var containerInfoFilePath = `@../allDUinfo/${containerInfoFileName}.json`;
 var format = 'PEM';
 var cpeExtraVars;
-var containerName;
-var imageName;
+// var containerName;
+// var imageName;
 const { parse } = require('json2csv');
 const fields = ['no.', 'time'];
 const opts = { fields };
@@ -21,7 +19,7 @@ var dataList=[];
 const server = http.createServer(async(req, res) => {
     var urlObj = url.parse(req.url, true);
     const queryObject = urlObj.query;
-    console.log(urlObj.pathname)
+    
     if(urlObj.pathname == '/notice-change/playbook'){
       let state=queryObject.status;
       if(state == 0){
@@ -32,7 +30,7 @@ const server = http.createServer(async(req, res) => {
       res.end();
     }
     else if(urlObj.pathname == '/notice-change/DU'){
-      console.log("---- 已有新DU可部署 ----");
+      console.log('\x1b[33m%s\x1b[0m',":::::: 有新DU可部署 ::::::");
       containerInfoFileName=queryObject.filename;
       //containerName=queryObject.ContainerName;
       //imageName=queryObject.du_name + ":" + queryObject.du_ver
@@ -41,10 +39,11 @@ const server = http.createServer(async(req, res) => {
         reqBody = JSON.parse(chunk);
         //console.log(reqBody)
         res.end();
-        containerName=reqBody.ContainerName;
-        imageName=reqBody.ImageName;
-        console.log("---- 產生暫時性DU資訊 ----");
-        await createContainerInfoTmpFile();
+        let containerName=reqBody.ContainerName;
+        let imageName=reqBody.ImageName;
+        // let containerPorts=reqBody.ContainerPorts;
+        // let containerVolumes=reqBody.ContainerVolumes;
+        await createNewContainerInfoFile(containerName,imageName);
         main();
       })
     }
@@ -84,20 +83,23 @@ const server = http.createServer(async(req, res) => {
           reqBody = JSON.parse(chunk);
           let mac = reqBody.host_mac_addr;
           let host = reqBody.ansible_ssh_host;
+          let ssh_pass = reqBody.password;
 
-          let status = await registerCpe(mac,host)
+          console.log('\x1b[33m%s\x1b[0m',`::::::收到CPE-${mac}的註冊通知::::::`);
+
+          let status = await registerCpe(mac,host,ssh_pass)
           let config_result;
 
-          console.log(`status = ${status}`)
+          //console.log(`status = ${status}`)
           if (status == 0){
-            console.log(`CPE ${mac} 註冊完成`);
+            console.log('\x1b[33m%s\x1b[0m',`::::::CPE-${host} 註冊成功::::::`);
             config_result = JSON.stringify({
               config_complete: 1
             })
             res.write(config_result);
             res.end();
           }else{
-            console.log(`CPE ${mac} 註冊失敗`);
+            console.log('\x1b[33m%s\x1b[0m',`::::::CPE-${host} 註冊失敗::::::`);
             config_result = JSON.stringify({
               config_complete: 0
             })
@@ -303,7 +305,7 @@ async function getHostName(q2Ans){
   
 }
 
-async function registerCpe(macAddr,ip){
+async function registerCpe(macAddr,ip,ssh_pass){
   return new Promise(async (resolve,rejects) => {
     let key_dir = `../cpe_ssh_keys/${macAddr}`;
     let key_path = `../cpe_ssh_keys/${macAddr}/cpeKey`;
@@ -311,9 +313,9 @@ async function registerCpe(macAddr,ip){
     if (!fs.existsSync(key_dir)){
       fs.mkdir(key_dir,'0777',async (err) => { 
         if (err) { 
-            return console.error(err); 
+            return console.error(err);
         }else{
-          let status = await addCpe(key_path,macAddr,ip);
+          let status = await addCpe(key_path,macAddr,ip,ssh_pass);
           if(status == 0)
             resolve(0)
           else
@@ -322,7 +324,7 @@ async function registerCpe(macAddr,ip){
         }   
       })
     }else{
-      let status = await addCpe(key_path,macAddr,ip);
+      let status = await addCpe(key_path,macAddr,ip,ssh_pass);
       if(status == 0)
         resolve(0)
       else
@@ -332,7 +334,7 @@ async function registerCpe(macAddr,ip){
   
 }
 
-function addCpe(key_path,macAddr,ip){
+function addCpe(key_path,macAddr,ip,ssh_pass){
   return new Promise((resolve,rejects) => {
     //console.log("add key")
     keygen({
@@ -341,15 +343,15 @@ function addCpe(key_path,macAddr,ip){
       format: format
     },function(err, out){
         if(err) return console.log('ssh key產生失敗: '+err);
-        console.log('完成產生ssh key');
-        //console.log('public key: '+out.pubKey);
+        
         let register_new_cpe_extra_vars=JSON.stringify({
           host: macAddr,
           ansible_ip: ip,
-          ssh_key_path: key_path
+          ssh_key_path: key_path,
+          ansible_password: ssh_pass
         })
         let configCpeExtraVar = JSON.stringify({
-          host: macAddr
+          host: macAddr,
         })
 
         var registerNewCpe = child_process.spawn('ansible-playbook',['register-new-cpe.yml','--extra-vars',`${register_new_cpe_extra_vars}`,'--extra-vars',`${containerInfoFilePath}`],{ cwd:'../ansible_playbook'});
@@ -365,7 +367,6 @@ function addCpe(key_path,macAddr,ip){
         registerNewCpe.on('exit', async function (code) {
   
               if(code == 0){
-                console.log(`CPE-${macAddr} 註冊成功`);
                 let config_result = await cpeInitialConfig(configCpeExtraVar);
                 if (config_result == 0){
                   resolve(0);
@@ -426,7 +427,7 @@ function updateVersion(cpeExtraVars){
 
 function deployNewDU(host){
   return new Promise((resolve,rejects) => {
-    containerInfoFilePath = `@../info/${containerInfoFileName}.json`;
+    containerInfoFilePath = `@../allDUinfo/${containerInfoFileName}.json`;
     var deployNewContainer = child_process.spawn('ansible-playbook',['check-and-deploy-du.yml','--extra-vars',`${containerInfoFilePath}`,'-e',`host=${host}`],{ cwd:'../ansible_playbook'});
     
     deployNewContainer.stdout.on('data', function (data) {
@@ -451,14 +452,14 @@ function deployNewDU(host){
   })
 }
 
-function createContainerInfoTmpFile(){
+function createNewContainerInfoFile(containerName,imageName){
   return new Promise((resolve,rejects) => {
     cpeExtraVars = JSON.stringify({
       container_name: containerName,
       image_ver: imageName,
       filename: containerInfoFileName
     })
-    var createTmpFile = child_process.spawn('ansible-playbook',['create-du-tmp-file.yml','--extra-vars',`${cpeExtraVars}`],{ cwd:'../ansible_playbook'});
+    var createTmpFile = child_process.spawn('ansible-playbook',['create-new-du-file.yml','--extra-vars',`${cpeExtraVars}`],{ cwd:'../ansible_playbook'});
     createTmpFile.stdout.on('data', function (data) {
       console.log(' ' + data);
     });
@@ -467,10 +468,10 @@ function createContainerInfoTmpFile(){
     });
     createTmpFile.on('close', (code) => {
         if (code == 0) {
-          console.log('新增tmp文件完成');
+          console.log('\x1b[33m%s\x1b[0m',`:::::: 新DU容器資訊檔已產生，請查看${containerInfoFileName}::::::`);
           resolve(0);
         }else{
-          console.log('新增tmp文件失敗');
+          console.log('\x1b[31m%s\x1b[0m',`:::::: 新DU容器資訊檔產生失敗::::::`);
           rejects(1);
         }
     })
