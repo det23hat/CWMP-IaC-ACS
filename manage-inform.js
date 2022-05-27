@@ -41,9 +41,9 @@ const server = http.createServer(async(req, res) => {
         res.end();
         let containerName=reqBody.ContainerName;
         let imageName=reqBody.ImageName;
-        // let containerPorts=reqBody.ContainerPorts;
-        // let containerVolumes=reqBody.ContainerVolumes;
-        await createNewContainerInfoFile(containerName,imageName);
+        let containerPorts=reqBody.ContainerPorts;
+        let containerVolumes=reqBody.ContainerVolumes;
+        await createNewContainerInfoFile(containerName,imageName,containerPorts,containerVolumes);
         main();
       })
     }
@@ -140,18 +140,6 @@ const server = http.createServer(async(req, res) => {
     }
       
 })
-
-function write(){
-  const csv = parse(dataList, opts);
-  fs.writeFile('../info/test_10.csv', csv, (err)=>{
-    if (err){
-      console.log(err)
-      
-    };
-    console.log("寫檔案")
-    
-  });
-}
 
 function main(){
   return new Promise((resolve, rejects) => {
@@ -452,11 +440,13 @@ function deployNewDU(host){
   })
 }
 
-function createNewContainerInfoFile(containerName,imageName){
+function createNewContainerInfoFile(containerName,imageName,containerPorts,containerVolumes){
   return new Promise((resolve,rejects) => {
     cpeExtraVars = JSON.stringify({
       container_name: containerName,
       image_ver: imageName,
+      ports: containerPorts,
+      volumes: containerVolumes,
       filename: containerInfoFileName
     })
     var createTmpFile = child_process.spawn('ansible-playbook',['create-new-du-file.yml','--extra-vars',`${cpeExtraVars}`],{ cwd:'../ansible_playbook'});
@@ -496,10 +486,10 @@ function updateDUFile(containerInfoFileName){
 
     updateDUFileVer.on('close', (code) => {
       if (code == 0) {
-        console.log('DU文件更新完成');
+        console.log('\x1b[31m%s\x1b[0m',':::::: DU文件更新完成::::::');
         resolve(0);
       }else{
-        console.log('DU文件更新失敗');
+        console.log('\x1b[31m%s\x1b[0m','::::::DU文件更新失敗::::::');
         rejects(1);
       }
     })
