@@ -9,12 +9,6 @@ var containerInfoFileName = 'fortest';
 var containerInfoFilePath = `@../allDUinfo/${containerInfoFileName}.json`;
 var format = 'PEM';
 var cpeExtraVars;
-// var containerName;
-// var imageName;
-const { parse } = require('json2csv');
-const fields = ['no.', 'time'];
-const opts = { fields };
-var dataList=[];
 
 const server = http.createServer(async(req, res) => {
     var urlObj = url.parse(req.url, true);
@@ -32,12 +26,8 @@ const server = http.createServer(async(req, res) => {
     else if(urlObj.pathname == '/notice-change/DU'){
       console.log('\x1b[33m%s\x1b[0m',":::::: 有新DU可部署 ::::::");
       containerInfoFileName=queryObject.filename;
-      //containerName=queryObject.ContainerName;
-      //imageName=queryObject.du_name + ":" + queryObject.du_ver
-      //console.log(containerInfoFileName);
       req.on('data',async (chunk) => {
         reqBody = JSON.parse(chunk);
-        //console.log(reqBody)
         res.end();
         let containerName=reqBody.ContainerName;
         let imageName=reqBody.ImageName;
@@ -116,27 +106,11 @@ const server = http.createServer(async(req, res) => {
         let starttime = Date.now();
         deployNewDU(host).then((end)=>{
           let totalSpend= end - starttime;
-          // let data={
-          //     no: i,
-          //     time: totalSpend
-          //   };
+
           console.log(host+" spend time:"+totalSpend)
         });
         res.end();
       })
-      // host='cpe'
-      // for(i=1;i<=5;i++){
-      //   let starttime = Date.now();
-      //   let end = await deployNewDU(host);
-      //   let totalSpend= end - starttime;
-      //   let data={
-      //     no: i,
-      //     time: totalSpend
-      //   };
-      //   dataList.push(data);
-      //   console.log(totalSpend)
-      // }
-      //write();
     }
       
 })
@@ -297,7 +271,6 @@ async function registerCpe(macAddr,ip,ssh_pass){
   return new Promise(async (resolve,rejects) => {
     let key_dir = `../cpe_ssh_keys/${macAddr}`;
     let key_path = `../cpe_ssh_keys/${macAddr}/cpeKey`;
-    //process.chdir('/cpe_ssh_keys');
     if (!fs.existsSync(key_dir)){
       fs.mkdir(key_dir,'0777',async (err) => { 
         if (err) { 
@@ -324,7 +297,6 @@ async function registerCpe(macAddr,ip,ssh_pass){
 
 function addCpe(key_path,macAddr,ip,ssh_pass){
   return new Promise((resolve,rejects) => {
-    //console.log("add key")
     keygen({
       location: key_path,
       read: true,
